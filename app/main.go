@@ -29,10 +29,12 @@ func main() {
 
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
-
-			conn.Write([]byte("00 00 00 07"))
 			os.Exit(1)
 		}
+
+		conn.Write([]byte("00 00 00 07"))
+
+		defer conn.Close()
 	}
 
 }
