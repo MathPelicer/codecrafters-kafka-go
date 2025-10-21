@@ -38,9 +38,18 @@ func main() {
 }
 
 func handleConnection(conn net.Conn) {
-	var bigEndian = make([]byte, 4)
-	binary.BigEndian.PutUint32(bigEndian, 7)
-	conn.Write(bigEndian)
+	var buff = make([]byte, 8)
+	createMessageSizeHeader(buff, 0)
+	createCorrelationIdHeader(buff, 7)
+	conn.Write(buff)
 
 	defer conn.Close()
+}
+
+func createMessageSizeHeader(buff []byte, size int) {
+	binary.BigEndian.PutUint32(buff[0:4], 0)
+}
+
+func createCorrelationIdHeader(buff []byte, correlationId uint32) {
+	binary.BigEndian.PutUint32(buff[4:8], correlationId)
 }
