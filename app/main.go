@@ -20,6 +20,8 @@ const API_KEY = "ApiKey"
 const API_VERSION = "ApiVersion"
 const CORRELATION_ID = "CorrelationId"
 const MESSAGE_SIZE = "MessageSize"
+const ERROR_CODE = "ErrorCode"
+const MAX_SUPPORTED_VERSION = 4
 
 var RequestProperties = map[string]PropertyPositioning{
 	API_KEY:        {4, 6},
@@ -30,7 +32,10 @@ var RequestProperties = map[string]PropertyPositioning{
 var ResponseProperties = map[string]PropertyPositioning{
 	MESSAGE_SIZE:   {0, 4},
 	CORRELATION_ID: {4, 8},
+	ERROR_CODE:     {8, 10},
 }
+
+var ErrorCodes = map[string]int{}
 
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -68,12 +73,18 @@ func handleConnection(conn net.Conn) {
 	}
 
 	var _ = parseRequestDataUint16(reqBuff, API_KEY)
-	var _ = parseRequestDataUint16(reqBuff, API_VERSION)
+	var apiVersion = parseRequestDataUint16(reqBuff, API_VERSION)
 	var correlationId = parseRequestDataUint32(reqBuff, CORRELATION_ID)
+	var errorCode = 0
 
-	var buff = make([]byte, 8)
+	if apiVersion > MAX_SUPPORTED_VERSION {
+		errorCode = 35
+	}
+
+	var buff = make([]byte, 10)
 	createResponseDataUint32(buff, MESSAGE_SIZE, 0)
 	createResponseDataUint32(buff, CORRELATION_ID, correlationId)
+	createResponseDataUint16(buff, ERROR_CODE, uint16(errorCode))
 	conn.Write(buff)
 
 	defer conn.Close()
@@ -89,4 +100,8 @@ func parseRequestDataUint32(reqBuff []byte, property string) uint32 {
 
 func createResponseDataUint32(buff []byte, property string, data uint32) {
 	binary.BigEndian.PutUint32(buff[ResponseProperties[property].Start:ResponseProperties[property].End], data)
+}
+
+func createResponseDataUint16(buff []byte, property string, data uint16) {
+	binary.BigEndian.PutUint16(buff[ResponseProperties[property].Start:ResponseProperties[property].End], data)
 }
