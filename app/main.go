@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
 	"os"
@@ -32,9 +33,14 @@ func main() {
 			os.Exit(1)
 		}
 
-		conn.Write([]byte("00 00 00 07"))
-
-		defer conn.Close()
+		handleConnection(conn)
 	}
+}
 
+func handleConnection(conn net.Conn) {
+	var bigEndian = make([]byte, 4)
+	binary.BigEndian.PutUint32(bigEndian, 7)
+	conn.Write(bigEndian)
+
+	defer conn.Close()
 }
